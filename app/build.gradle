@@ -11,10 +11,10 @@ android {
 
     signingConfigs {
         config {
-            keyAlias 'phill'
-            keyPassword 'phill0626'
+            keyAlias key_alias
+            keyPassword key_store_password
             storeFile file('../../../KeyStore/platform.keystore')
-            storePassword 'phill0626'
+            storePassword key_store_password
         }
     }
 
