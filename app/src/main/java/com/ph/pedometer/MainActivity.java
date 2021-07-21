@@ -1,7 +1,12 @@
 package com.ph.pedometer;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -11,6 +16,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -19,6 +25,7 @@ public class MainActivity extends AppCompatActivity
     private SensorManager mSensorManager;
     private Sensor mStepCounterSensor;
 
+    private static int PHYISCAL_ACTIVITY = 0x1001;
     //현재 걸음 수
     private int mSteps = 0;
     //리스너가 등록되고 난 후의 step count
@@ -36,20 +43,74 @@ public class MainActivity extends AppCompatActivity
 
         mTextCount.setText("" + mSteps);
 
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        mStepCounterSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
-
-        if(mStepCounterSensor != null)
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_DENIED)
         {
-            mSensorManager.registerListener(mSensorEventListener, mStepCounterSensor, SensorManager.SENSOR_DELAY_GAME);
+            //ask for permission
+            requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, PHYISCAL_ACTIVITY);
         }
+        else
+        {
+            initSensors();
+        }
+
+
+
+//        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+//        mStepCounterSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+//
+//        if(mStepCounterSensor != null)
+//        {
+//            mSensorManager.registerListener(mSensorEventListener, mStepCounterSensor, SensorManager.SENSOR_DELAY_GAME);
+//        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
+    {
+        if(requestCode == PHYISCAL_ACTIVITY)
+        {
+            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            {
+                // permission was granted, yay! Do the
+                // contacts-related task you need to do.
+                initSensors();
+
+            }
+            else
+            {
+                // permission denied, boo! Disable the
+                // functionality that depends on this permission.
+                finish();
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
     protected void onDestroy()
     {
-        mSensorManager.unregisterListener(mSensorEventListener);
+        if(mSensorManager != null)
+        {
+            mSensorManager.unregisterListener(mSensorEventListener);
+        }
         super.onDestroy();
+    }
+
+    private void initSensors() {
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        assert mSensorManager != null;
+        Sensor stepSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+
+        if (stepSensor == null) {
+//            createToastMessage("Sensor not found.");
+//            selectedFragment = new NoSensor_Fragment();
+//            activeFragment = 5;
+//            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selectedFragment).commit();
+            Toast.makeText(MainActivity.this, "Type_STEP_COUNT is null", Toast.LENGTH_SHORT).show();
+        } else {
+            mSensorManager.registerListener(mSensorEventListener, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
 
     private View.OnClickListener mOnClickListener = new View.OnClickListener()
@@ -84,7 +145,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy)
         {
-
+            Toast.makeText(MainActivity.this, "acc"+accuracy, Toast.LENGTH_SHORT).show();
         }
     };
 }
